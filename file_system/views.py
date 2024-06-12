@@ -8,6 +8,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from django.core.exceptions import ValidationError
 from rest_framework.decorators import api_view, permission_classes
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 import os
 import uuid
@@ -64,6 +65,26 @@ def get_specific_user_files(request, user_id):
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_file(request, file_id):
+    """
+    Delete a file by its ID
+    """
+
+    try:
+        file_instance = FileSystem.objects.get(id=file_id)
+        # Check if the user is the owner of the file or an admin
+        if request.user.id != file_instance.user.id and not request.user.is_superuser:
+            return Response({"error": "You do not have permission to delete this file"}, status=status.HTTP_403_FORBIDDEN)
+
+    except FileSystem.DoesNotExist:
+        return Response({"error": "File not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    file_instance.delete()
+    return Response({"message": "File deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+
+
 class UpdateFileSystemView(mixins.UpdateModelMixin,
                      GenericViewSet):
     queryset = FileSystem.objects.all()
@@ -86,13 +107,15 @@ class DownloadFileView(mixins.RetrieveModelMixin,
     permission_classes = [IsAuthenticated, ]
 
     def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
+        try:
+            instance = self.get_object()
+            instance.last_download_date = datetime.now()
+            instance.save()
 
-        tz_moskow = pytz.timezone(os.environ.get('TIMEZONE'))
-        instance.last_download_date = datetime.now(tz_moskow)
-        instance.save()
+            file_handle = instance.filepath.open()
+        except Exception as e:
+            print(e)
 
-        file_handle = instance.filepath.open()
         return FileResponse(file_handle, filename=instance.filepath.name, as_attachment=True)
 
 
@@ -103,13 +126,14 @@ class GenerateExternalDownloadLinkView(mixins.RetrieveModelMixin,
     permission_classes = [IsAuthenticated]
 
     def retrieve(self, request, *args, **kwargs):
+        print('----get---file-link---')
         instance = self.get_object()
 
         external_download_uuid = uuid.uuid3(uuid.NAMESPACE_URL, str(instance.filepath))
         instance.external_download_link = external_download_uuid
         instance.save()
 
-        download_link = 'api/v1/download_external_link?uuid='
+        download_link = 'files/download_external_link?uuid='
         link_host = request.build_absolute_uri('/') + download_link
         external_download_link = f'{link_host}{external_download_uuid}'
 
