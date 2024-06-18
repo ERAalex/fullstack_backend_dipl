@@ -42,7 +42,7 @@ def upload_file(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_user_files(request):
+def get_all_users_files(request):
     """
     Get all users files
     """
@@ -54,10 +54,12 @@ def get_user_files(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_specific_user_files(request, user_id):
+def get_user_files(request):
     """
     Get all files uploaded by a specific user
     """
+
+    user_id = request.user.id
     if request.user.id != user_id and not request.user.is_superuser:
         return Response({"error": "You cannot get this files"}, status=status.HTTP_404_NOT_FOUND)
     try:
@@ -69,6 +71,24 @@ def get_specific_user_files(request, user_id):
     serializer = FileSystemSerializers(user_files, many=True)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_specific_user_files(request, user_id):
+    """
+    Get all files uploaded by a specific user
+    """
+
+    if request.user.id != user_id and not request.user.is_superuser:
+        return Response({"error": "You cannot get this files"}, status=status.HTTP_404_NOT_FOUND)
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    user_files = FileSystem.objects.filter(user=user)
+    serializer = FileSystemSerializers(user_files, many=True)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
