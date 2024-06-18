@@ -2,14 +2,15 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 from django.urls import path
-from .views import CreateAdminUserView, list_users, create_user, delete_user
+from .views import CreateAdminUserView, list_users, create_user, delete_user, data_user, personal_info
 
 urlpatterns = [
     path('create-admin/', CreateAdminUserView.as_view(), name='create-admin'),
     path('create-user/', create_user, name='create_user'),
     path('delete-user/<int:user_id>/', delete_user, name='delete_user'),
-    path('users/', list_users, name='list-users'),
-
+    path('users/', list_users, name='list_users'),
+    path('data-user/<int:user_id>/', data_user, name='data_user'),
+    path('data-user/', personal_info, name='personal_info'),
 ]
 
 if settings.DEBUG:

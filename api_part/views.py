@@ -34,12 +34,11 @@ def list_users(request):
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated])
+# @permission_classes([IsAuthenticated])
 def create_user(request):
     """
     Create a new user
     """
-
     serializer = UserSerializer(data=request.data)
     if serializer.is_valid():
         serializer.save()
@@ -59,3 +58,51 @@ def delete_user(request, user_id):
         return Response(status=status.HTTP_204_NO_CONTENT)
     except User.DoesNotExist:
         return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def data_user(request, user_id):
+    """
+    Retrieve user information by user ID
+    """
+
+    # Check if the requesting user is an admin or the user themselves
+    if not request.user.is_superuser and request.user.id != user_id:
+        return Response({"error": "You do not have permission to access this information"}, status=status.HTTP_403_FORBIDDEN)
+
+    try:
+        user = User.objects.get(id=user_id)
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    user_info = {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "is_admin": user.is_superuser,
+    }
+
+    return Response(user_info, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def personal_info(request):
+    """
+    Retrieve user information by user ID
+    """
+    print('---1--')
+    try:
+        user = User.objects.get(id=request.user.id)
+    except User.DoesNotExist:
+        return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    user_info = {
+        "id": user.id,
+        "username": user.username,
+        "email": user.email,
+        "is_admin": user.is_superuser,
+    }
+
+    return Response(user_info, status=status.HTTP_200_OK)

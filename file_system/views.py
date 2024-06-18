@@ -25,13 +25,18 @@ def upload_file(request):
     """
     Upload a new file
     """
-    data_upload = request.data
-    data_upload['user'] = request.user.id
 
-    serializer = FileSystemSerializers(data=data_upload)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    try:
+        # Create a mutable copy of request.data
+        data = request.data.copy()
+        data['user'] = request.user.id
+
+        serializer = FileSystemSerializers(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+    except Exception as e:
+        print(e)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
