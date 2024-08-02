@@ -27,19 +27,16 @@ def upload_file(request):
     """
 
     try:
-        print('----start---1--')
-        # Create a mutable copy of request.data
-
         data = request.data
-        print('----start---2--')
+
         if 'file' in request.data:
-            print('----start--2-1--')
+
             # Create a new UploadedFile instance
             uploaded_file_instance = FileSystem.objects.create(
                 user=request.user,
                 file=request.FILES.get('file'),
                 filename=request.FILES.get('file').name)
-            print('----start---3--')
+
             data = {
                 "message": "File uploaded successfully",
                 "file_name": uploaded_file_instance.filename,
@@ -48,21 +45,10 @@ def upload_file(request):
             # Return success response
             return Response(data, status=status.HTTP_201_CREATED)
 
-        print('----start---4--')
         return Response(data, status=status.HTTP_400_BAD_REQUEST)
     except Exception as e:
         print("Error during file upload:", e)
         return Response({'error': e}, status=status.HTTP_400_BAD_REQUEST)
-
-
-        # serializer = FileSystemSerializers(data=data)
-
-        # if serializer.is_valid():
-        #     serializer.save()
-    #         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    # except Exception as e:
-    #     print(e)
-    # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['GET'])
@@ -133,7 +119,7 @@ def delete_file(request, file_id):
         return Response({"error": "File not found"}, status=status.HTTP_404_NOT_FOUND)
 
     file_instance.delete()
-    return Response({"message": "File deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+    return Response({'message': 'File deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
 
 
 class UpdateFileSystemView(mixins.UpdateModelMixin,

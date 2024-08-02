@@ -10,12 +10,13 @@ router.register(r'download_file', DownloadFileView, basename='download-file')
 router.register(r'download_file_link', GenerateExternalDownloadLinkView, basename='download-file-link')
 
 urlpatterns = [
-    path('upload-file/', upload_file, name='upload_file'),
+
     path('get_all_users_files/', get_all_users_files, name='get_all_users_files'),
     path('get_user_files/', get_user_files, name='get_user_files'),
     path('get_specific_user_files/<int:user_id>/', get_specific_user_files, name='get_specific_user_files'),
-    path('delete-file/<int:file_id>/', delete_file, name='delete_file'),
 
+    path('upload-file/', upload_file, name='upload_file'),
+    path('delete-file/<int:file_id>/', delete_file, name='delete_file'),
     path('download_external_link', ExternalDownloadLinkView.as_view()),
 
     path('', include(router.urls)),
