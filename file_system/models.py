@@ -14,11 +14,11 @@ class FileSystem(models.Model):
     load_date = models.DateTimeField(auto_now_add=True)
     last_download_date = models.DateTimeField(null=True, blank=True)
     description = models.TextField(max_length=500, null=True, blank=True)
-    filepath = models.FileField(upload_to=user_directory_path, null=True, blank=True)
+    file = models.FileField(upload_to=user_directory_path, null=True, blank=True)
     external_download_link = models.UUIDField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
-        self.filesize = self.filepath.size
+        self.filesize = self.file.size
         super(FileSystem, self).save(*args, **kwargs)
 
     def __str__(self) -> str:
