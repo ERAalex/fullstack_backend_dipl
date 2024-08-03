@@ -33,3 +33,7 @@ class FileSystem(models.Model):
     @classmethod
     def get_users_files(cls):
         pass
+
+    @classmethod
+    def get_file_path(cls, instance):
+        return f'{BASE_MEDIA_DIR}/{instance.user.id}/{instance.filename}'

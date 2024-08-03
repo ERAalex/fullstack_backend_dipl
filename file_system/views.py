@@ -118,12 +118,18 @@ def delete_file(request, file_id):
     except FileSystem.DoesNotExist:
         return Response({"error": "File not found"}, status=status.HTTP_404_NOT_FOUND)
 
+    # Get the path to the file
+    file_path = FileSystem.get_file_path(file_instance)
     file_instance.delete()
+
+    # Check if the file exists and delete it
+    if os.path.exists(file_path):
+        os.remove(file_path)
+
     return Response({'message': 'File deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
 
 
-class UpdateFileSystemView(mixins.UpdateModelMixin,
-                     GenericViewSet):
+class UpdateFileSystemView(mixins.UpdateModelMixin, GenericViewSet):
     queryset = FileSystem.objects.all()
     serializer_class = UpdateFileSystemSerializers
     permission_classes = [IsAuthenticated, IsAdminUser]
@@ -137,8 +143,7 @@ class UpdateFileSystemView(mixins.UpdateModelMixin,
         return super().update(request, *args, **kwargs)
 
 
-class DownloadFileView(mixins.RetrieveModelMixin,
-                       GenericViewSet):
+class DownloadFileView(mixins.RetrieveModelMixin, GenericViewSet):
     queryset = FileSystem.objects.all()
     serializer_class = FileSystemSerializers
     permission_classes = [IsAuthenticated, ]
@@ -156,8 +161,7 @@ class DownloadFileView(mixins.RetrieveModelMixin,
         return FileResponse(file_handle, filename=instance.filepath.name, as_attachment=True)
 
 
-class GenerateExternalDownloadLinkView(mixins.RetrieveModelMixin,
-                                       GenericViewSet):
+class GenerateExternalDownloadLinkView(mixins.RetrieveModelMixin, GenericViewSet):
     queryset = FileSystem.objects.all()
     serializer_class = FileSystemSerializers
     permission_classes = [IsAuthenticated]
