@@ -12,7 +12,7 @@ class FileSystem(models.Model):
     user = models.ForeignKey(User, verbose_name='User', on_delete=models.CASCADE)
     filename = models.CharField(max_length=255)
     file_type = models.CharField(max_length=255, null=True, blank=True)
-    filesize = models.PositiveIntegerField(editable=False, null=True, blank=True)
+    filesize = models.CharField(max_length=10, editable=False, null=True, blank=True)
     load_date = models.DateTimeField(auto_now_add=True)
     last_download_date = models.DateTimeField(null=True, blank=True)
     description = models.TextField(max_length=500, null=True, blank=True)
@@ -25,8 +25,8 @@ class FileSystem(models.Model):
             _, file_extension = os.path.splitext(self.file.name)
             self.file_type = file_extension.lower().replace('.', '')
 
-        # Convert filesize to MB
-        self.filesize = self.file.size / (1024 * 1024)
+        # Convert filesize to MB and format to 2 decimal places (in case if file less than 1 mb)
+        self.filesize = round(self.file.size / (1024 * 1024), 2)
         super(FileSystem, self).save(*args, **kwargs)
 
     def __str__(self) -> str:

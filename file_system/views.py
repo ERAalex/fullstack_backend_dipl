@@ -135,7 +135,7 @@ def delete_file(request, file_id):
 
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
-def rename_file(request, file_id):
+def change_file(request, file_id):
     """
     Rename or description change of the file by its ID
     """
@@ -149,9 +149,12 @@ def rename_file(request, file_id):
     except FileSystem.DoesNotExist:
         return Response({"error": "File not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    # Get the path to the file
     if 'new_name' in request.data:
         file_instance.filename = request.data['new_name']
+        file_instance.save()
+
+    if 'new_description' in request.data:
+        file_instance.description = request.data['new_description']
         file_instance.save()
 
     return Response({'message': 'File deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
