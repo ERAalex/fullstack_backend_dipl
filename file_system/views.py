@@ -9,6 +9,7 @@ from django.core.exceptions import ValidationError
 from rest_framework.decorators import api_view, permission_classes
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.shortcuts import get_object_or_404
 
 import os
 import uuid
@@ -192,36 +193,49 @@ class DownloadFileView(mixins.RetrieveModelMixin, GenericViewSet):
         return FileResponse(file_handle, filename=instance.filepath.name, as_attachment=True)
 
 
-class GenerateExternalDownloadLinkView(mixins.RetrieveModelMixin, GenericViewSet):
-    queryset = FileSystem.objects.all()
-    serializer_class = FileSystemSerializers
-    permission_classes = [IsAuthenticated]
+@api_view(['GET'])
+def generate_external_download_link(request, file_id):
+    """
+    Generate an external download link for a file with the given file_id.
+    """
+    print('---1----')
+    # Retrieve the file instance or return 404 if not found
+    instance = get_object_or_404(FileSystem, id=file_id)
 
-    def retrieve(self, request, *args, **kwargs):
-        print('----get---file-link---')
-        instance = self.get_object()
+    # Generate a UUID for the external download link
+    external_download_uuid = uuid.uuid3(uuid.NAMESPACE_URL, str(instance.file.path))
+    instance.external_download_link = external_download_uuid
+    instance.save()
 
-        external_download_uuid = uuid.uuid3(uuid.NAMESPACE_URL, str(instance.filepath))
-        instance.external_download_link = external_download_uuid
-        instance.save()
+    # Build the download link
+    download_link = 'files/download_external_link?uuid='
+    link_host = request.build_absolute_uri('/') + download_link
+    external_download_link = f'{link_host}{external_download_uuid}'
 
-        download_link = 'files/download_external_link?uuid='
-        link_host = request.build_absolute_uri('/') + download_link
-        external_download_link = f'{link_host}{external_download_uuid}'
-
-        return Response({'link': external_download_link})
+    return Response({'link': external_download_link})
 
 
-class ExternalDownloadLinkView(APIView):
+@api_view(['GET'])
+def download_file_by_external_link(request):
+    """
+    Download a file using an external download link UUID.
+    """
 
-    def get(self, request, *args, **kwargs):
-        try:
-            get_uuid = request.query_params.get('uuid')
-            queryset = FileSystem.objects.get(external_download_link=get_uuid)
-        except ValidationError as E:
-            return Response({
-                'Error': E
-            })
+    # Get the UUID from the query parameters
+    uuid = request.GET.get('uuid')
+    if not uuid:
+        return Response({'error': 'UUID parameter is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        file_handle = queryset.filepath.open()
-        return FileResponse(file_handle, filename=queryset.filepath.name, as_attachment=True)
+    # Retrieve the file instance by UUID
+    try:
+        instance = FileSystem.objects.get(external_download_link=uuid)
+    except FileSystem.DoesNotExist:
+        return Response({'error': 'File not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+    # Serve the file for download
+    file_path = instance.file.path
+    try:
+        response = FileResponse(open(file_path, 'rb'), as_attachment=True, filename=instance.filename)
+        return response
+    except IOError:
+        return Response({'error': 'File not found on the server.'}, status=status.HTTP_404_NOT_FOUND)
