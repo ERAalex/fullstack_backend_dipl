@@ -119,12 +119,36 @@ def delete_file(request, file_id):
         return Response({"error": "File not found"}, status=status.HTTP_404_NOT_FOUND)
 
     # Get the path to the file
-    file_path = FileSystem.get_file_path(file_instance)
+    file_path = file_instance.file.path
     file_instance.delete()
 
     # Check if the file exists and delete it
     if os.path.exists(file_path):
         os.remove(file_path)
+
+    return Response({'message': 'File deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated])
+def rename_file(request, file_id):
+    """
+    Rename or description change of the file by its ID
+    """
+
+    try:
+        file_instance = FileSystem.objects.get(id=file_id)
+        # Check if the user is the owner of the file or an admin
+        if request.user.id != file_instance.user.id and not request.user.is_superuser:
+            return Response({"error": "You do not have permission to delete this file"}, status=status.HTTP_403_FORBIDDEN)
+
+    except FileSystem.DoesNotExist:
+        return Response({"error": "File not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    # Get the path to the file
+    if 'new_name' in request.data:
+        file_instance.filename = request.data['new_name']
+        file_instance.save()
 
     return Response({'message': 'File deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
 
