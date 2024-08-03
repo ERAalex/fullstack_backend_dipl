@@ -31,11 +31,15 @@ def upload_file(request):
 
         if 'file' in request.data:
 
+            uploaded_file = request.FILES.get('file')
+            # Get the filename without the extension
+            base_filename, file_extension = os.path.splitext(uploaded_file.name)
+
             # Create a new UploadedFile instance
             uploaded_file_instance = FileSystem.objects.create(
                 user=request.user,
-                file=request.FILES.get('file'),
-                filename=request.FILES.get('file').name)
+                file=uploaded_file,
+                filename=base_filename)  # Save filename without extension
 
             data = {
                 "message": "File uploaded successfully",

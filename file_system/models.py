@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from backend_cloud_dipl.settings import BASE_MEDIA_DIR
+import os
 
 
 def user_directory_path(instance, filename):
@@ -10,6 +11,7 @@ def user_directory_path(instance, filename):
 class FileSystem(models.Model):
     user = models.ForeignKey(User, verbose_name='User', on_delete=models.CASCADE)
     filename = models.CharField(max_length=255)
+    file_type = models.CharField(max_length=255, null=True, blank=True)
     filesize = models.PositiveIntegerField(editable=False, null=True, blank=True)
     load_date = models.DateTimeField(auto_now_add=True)
     last_download_date = models.DateTimeField(null=True, blank=True)
@@ -18,7 +20,13 @@ class FileSystem(models.Model):
     external_download_link = models.UUIDField(null=True, blank=True)
 
     def save(self, *args, **kwargs):
-        self.filesize = self.file.size
+        # Automatically set file_type based on the filename
+        if self.file:
+            _, file_extension = os.path.splitext(self.file.name)
+            self.file_type = file_extension.lower().replace('.', '')
+
+        # Convert filesize to MB
+        self.filesize = self.file.size / (1024 * 1024)
         super(FileSystem, self).save(*args, **kwargs)
 
     def __str__(self) -> str:
