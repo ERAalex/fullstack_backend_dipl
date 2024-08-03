@@ -1,23 +1,21 @@
 from django.http import FileResponse
 from rest_framework.response import Response
-from rest_framework.views import APIView
-from rest_framework import mixins, status, parsers
+
+from rest_framework import mixins, status
 from rest_framework.viewsets import GenericViewSet
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.exceptions import AuthenticationFailed
-from django.core.exceptions import ValidationError
 from rest_framework.decorators import api_view, permission_classes
 from django.contrib.auth.models import User
-from django.utils import timezone
 from django.shortcuts import get_object_or_404
 
 import os
 import uuid
-import pytz
 from datetime import datetime
 
 from .models import FileSystem
 from .serializers import FileSystemSerializers, UpdateFileSystemSerializers
+from .utils import user_or_admin_required
 
 
 @api_view(['POST'])
@@ -109,6 +107,7 @@ def get_specific_user_files(request, user_id):
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
+@user_or_admin_required
 def delete_file(request, file_id):
     """
     Delete a file by its ID
@@ -136,6 +135,7 @@ def delete_file(request, file_id):
 
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])
+@user_or_admin_required
 def change_file(request, file_id):
     """
     Rename or description change of the file by its ID
@@ -161,39 +161,26 @@ def change_file(request, file_id):
     return Response({'message': 'File deleted successfully'}, status=status.HTTP_204_NO_CONTENT)
 
 
-class UpdateFileSystemView(mixins.UpdateModelMixin, GenericViewSet):
-    queryset = FileSystem.objects.all()
-    serializer_class = UpdateFileSystemSerializers
-    permission_classes = [IsAuthenticated, IsAdminUser]
+@api_view(['GET'])
+@user_or_admin_required
+def change_security_link(request, file_id):
+    """
+    Generate an external download link for a file with the given file_id.
+    """
 
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
+    instance = get_object_or_404(FileSystem, id=file_id)
 
-        if request.user.id != instance.user_id:
-            raise AuthenticationFailed
+    # Generate a new UUID for the external download link
+    new_external_download_uuid = uuid.uuid4()  # Use uuid4() for a random UUID
+    instance.external_download_link = str(new_external_download_uuid)
+    instance.total_downloads = 0
+    instance.save()
 
-        return super().update(request, *args, **kwargs)
-
-
-class DownloadFileView(mixins.RetrieveModelMixin, GenericViewSet):
-    queryset = FileSystem.objects.all()
-    serializer_class = FileSystemSerializers
-    permission_classes = [IsAuthenticated, ]
-
-    def retrieve(self, request, *args, **kwargs):
-        try:
-            instance = self.get_object()
-            instance.last_download_date = datetime.now()
-            instance.save()
-
-            file_handle = instance.filepath.open()
-        except Exception as e:
-            print(e)
-
-        return FileResponse(file_handle, filename=instance.filepath.name, as_attachment=True)
+    return Response({'external_download_link': 'changed'}, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
+@user_or_admin_required
 def generate_external_download_link(request, file_id):
     """
     Generate an external download link for a file with the given file_id.
@@ -208,7 +195,7 @@ def generate_external_download_link(request, file_id):
     instance.save()
 
     # Build the download link
-    download_link = 'files/download_external_link?uuid='
+    download_link = 'files/download-external-link/?uuid='
     link_host = request.build_absolute_uri('/') + download_link
     external_download_link = f'{link_host}{external_download_uuid}'
 
@@ -235,7 +222,13 @@ def download_file_by_external_link(request):
     # Serve the file for download
     file_path = instance.file.path
     try:
-        response = FileResponse(open(file_path, 'rb'), as_attachment=True, filename=instance.filename)
+        response = FileResponse(open(file_path, 'rb'),
+                                as_attachment=True,
+                                filename=instance.filename + '.' + instance.file_type)
+
+        instance.last_download_date = datetime.now()
+        instance.total_downloads += instance.total_downloads + 1
+        instance.save()
         return response
     except IOError:
         return Response({'error': 'File not found on the server.'}, status=status.HTTP_404_NOT_FOUND)

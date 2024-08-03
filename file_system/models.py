@@ -15,6 +15,7 @@ class FileSystem(models.Model):
     filesize = models.CharField(max_length=10, editable=False, null=True, blank=True)
     load_date = models.DateTimeField(auto_now_add=True)
     last_download_date = models.DateTimeField(null=True, blank=True)
+    total_downloads = models.IntegerField(default=0)
     description = models.TextField(max_length=500, null=True, blank=True)
     file = models.FileField(upload_to=user_directory_path, null=True, blank=True)
     external_download_link = models.UUIDField(null=True, blank=True)

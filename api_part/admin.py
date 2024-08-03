@@ -4,4 +4,4 @@ from file_system.models import FileSystem
 
 @admin.register(FileSystem)
 class FileSystemAdmin(admin.ModelAdmin):
-    list_display = ['user', 'filename',]
+    list_display = ['user', 'filename', 'id']

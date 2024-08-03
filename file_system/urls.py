@@ -3,12 +3,10 @@ from django.conf.urls.static import static
 from rest_framework.routers import DefaultRouter
 from django.urls import path, include
 from file_system.views import (upload_file, change_file, get_all_users_files, get_specific_user_files,
-                               generate_external_download_link, download_file_by_external_link,
-                               get_user_files, delete_file,
-                               DownloadFileView)
+                               generate_external_download_link, download_file_by_external_link, change_security_link,
+                               get_user_files, delete_file,)
 
 router = DefaultRouter()
-router.register(r'download_file', DownloadFileView, basename='download-file')
 
 urlpatterns = [
 
@@ -24,6 +22,7 @@ urlpatterns = [
     path('generate-external-link/<int:file_id>/', generate_external_download_link,
          name='generate-external-download-link'),
     path('download-external-link/', download_file_by_external_link, name='download-external-link'),
+    path('change-security-link/<int:file_id>/', change_security_link, name='change_security_link'),
 
     path('', include(router.urls)),
 ]
