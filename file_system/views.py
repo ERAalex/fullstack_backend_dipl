@@ -29,7 +29,7 @@ def upload_file(request):
         data = request.data
 
         if 'file' in request.data:
-
+            comments = request.data['comment']
             uploaded_file = request.FILES.get('file')
             # Get the filename without the extension
             base_filename, file_extension = os.path.splitext(uploaded_file.name)
@@ -38,6 +38,7 @@ def upload_file(request):
             uploaded_file_instance = FileSystem.objects.create(
                 user=request.user,
                 file=uploaded_file,
+                description=comments,
                 filename=base_filename)  # Save filename without extension
 
             data = {
@@ -61,7 +62,6 @@ def get_all_users_files(request):
     Get all users files
     """
 
-    print(request.user.id)
     users_files = FileSystem.objects.all()
     serializer = FileSystemSerializers(users_files, many=True)
 
