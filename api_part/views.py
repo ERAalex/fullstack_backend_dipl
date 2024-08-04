@@ -7,6 +7,8 @@ from django.contrib.auth.models import User
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 
+from rest_framework_simplejwt.tokens import RefreshToken
+
 
 class CreateAdminUserView(APIView):
     """
@@ -46,7 +48,7 @@ def create_user(request):
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['POST'])
+@api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 def delete_user(request, user_id):
     """
@@ -55,7 +57,7 @@ def delete_user(request, user_id):
     try:
         user = User.objects.get(id=user_id)
         user.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({"ok": "User deleted"}, status=status.HTTP_204_NO_CONTENT)
     except User.DoesNotExist:
         return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -92,7 +94,8 @@ def personal_info(request):
     """
     Retrieve user information by user ID
     """
-    print('---1--')
+
+    print(request.user)
     try:
         user = User.objects.get(id=request.user.id)
     except User.DoesNotExist:
@@ -106,3 +109,30 @@ def personal_info(request):
     }
 
     return Response(user_info, status=status.HTTP_200_OK)
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def logout(request):
+    """
+    Log out all user.
+    Args:
+        request (HttpRequest): The client's request to the server.
+    Returns:
+        HttpResponseRedirect: Redirects the user to the Login page.
+    """
+
+    if request.method == 'POST':
+        try:
+            # Extract access token from Authorization header
+            refresh_token = request.data["refresh"]
+
+            # Blacklist the refresh token
+            refresh_token_obj = RefreshToken(refresh_token)
+            refresh_token_obj.blacklist()
+
+            return Response({'message': 'User logout successfully'}, status=status.HTTP_205_RESET_CONTENT)
+        except Exception as e:
+            print(e)
+            return Response({'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+    return Response({'message': 'bad request'}, status=status.HTTP_400_BAD_REQUEST)
