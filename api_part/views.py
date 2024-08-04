@@ -5,7 +5,7 @@ from rest_framework.views import APIView
 from .serializers import AdminUserSerializer, UserSerializer
 from django.contrib.auth.models import User
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 
 from rest_framework_simplejwt.tokens import RefreshToken
 
@@ -28,9 +28,9 @@ class CreateAdminUserView(APIView):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsAdminUser])
 def list_users(request):
-    users = User.objects.all().values('id', 'username', 'email')
+    users = User.objects.all().values('id', 'username', 'email', 'is_staff')
     users_list = list(users)
     return Response(users_list)
 

@@ -55,14 +55,15 @@ def upload_file(request):
 
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, IsAdminUser])
 def get_all_users_files(request):
     """
     Get all users files
     """
 
-    users_files = FileSystem.objects.filter(user=request.user)
+    users_files = FileSystem.objects.all()
     serializer = FileSystemSerializers(users_files, many=True)
+
     return Response(serializer.data, status=status.HTTP_200_OK)
 
 
