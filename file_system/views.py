@@ -1,13 +1,12 @@
 from django.http import FileResponse
 from rest_framework.response import Response
 
-from rest_framework import mixins, status
-from rest_framework.viewsets import GenericViewSet
+from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
-from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.decorators import api_view, permission_classes
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
+from django.http import HttpResponse
 
 import os
 import uuid
@@ -53,6 +52,31 @@ def upload_file(request):
     except Exception as e:
         print("Error during file upload:", e)
         return Response({'error': e}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def download_file(request, file_id):
+    """
+    Download a file by its ID.
+    """
+    print('----d-d-dd---')
+    try:
+        # Retrieve the file object from the database
+        file_instance = get_object_or_404(FileSystem, id=file_id, user=request.user)
+
+        # Open the file for reading
+        with open(file_instance.file.path, 'rb') as f:
+            response = HttpResponse(f.read(), content_type='application/octet-stream')
+            response['Content-Disposition'] = f'attachment; filename={file_instance.filename}'
+            return response
+
+    except FileSystem.DoesNotExist:
+        return HttpResponse(status=404)
+
+    except Exception as e:
+        print("Error during file download:", e)
+        return HttpResponse(status=500)
 
 
 @api_view(['GET'])
