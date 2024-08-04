@@ -62,6 +62,37 @@ def delete_user(request, user_id):
         return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
+@api_view(['PATCH'])
+@permission_classes([IsAuthenticated, IsAdminUser])
+def change_user_status(request, user_id):
+    """
+    Set or unset a user as admin based on the is_admin parameter.
+    """
+    try:
+        # Fetch the user by user_id
+        user = User.objects.get(pk=user_id)
+
+        if user.is_staff:
+            user.is_staff = False
+        else:
+            user.is_staff = True
+
+        # Update the user's is_staff status
+        user.save()
+
+        # Prepare the response message
+        status_message = f"User set {user.is_staff}."
+        return Response({"message": status_message, "user_id": user.id, "is_staff": user.is_staff},
+                        status=status.HTTP_200_OK)
+
+    except User.DoesNotExist:
+        return Response({"error": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def data_user(request, user_id):

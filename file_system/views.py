@@ -61,6 +61,7 @@ def get_all_users_files(request):
     Get all users files
     """
 
+    print(request.user.id)
     users_files = FileSystem.objects.all()
     serializer = FileSystemSerializers(users_files, many=True)
 
