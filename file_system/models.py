@@ -38,7 +38,6 @@ class FileSystem(models.Model):
         verbose_name_plural = 'Файловый обменник'
         db_table = "file_system_model"
 
-
     @classmethod
     def get_users_files(cls):
         pass

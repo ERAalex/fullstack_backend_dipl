@@ -91,8 +91,6 @@ def change_user_status(request, user_id):
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def data_user(request, user_id):

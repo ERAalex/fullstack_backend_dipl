@@ -56,14 +56,15 @@ def upload_file(request):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@user_or_admin_required
 def download_file(request, file_id):
     """
     Download a file by its ID.
     """
-    print('----d-d-dd---')
+
     try:
         # Retrieve the file object from the database
-        file_instance = get_object_or_404(FileSystem, id=file_id, user=request.user)
+        file_instance = get_object_or_404(FileSystem, id=file_id)
 
         # Open the file for reading
         with open(file_instance.file.path, 'rb') as f:
