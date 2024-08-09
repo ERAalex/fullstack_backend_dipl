@@ -1,34 +1,20 @@
-# Dockerfile
+FROM python:3.8
 
-# Use the official Python image from the Docker Hub
-FROM python:3.11-slim
-
-# Set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
-
-# Set the working directory
+# working directory in the container
 WORKDIR /app
 
-# Install dependencies
-COPY requirements.txt /app/
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+# Copy the current directory contents into the container at /app
+COPY . .
 
-# Copy the project
-COPY . /app/
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Collect static files
-RUN python manage.py collectstatic --noinput
+# prepare my wait-for-it.sh
+COPY wait-for-it.sh /wait-for-it.sh
+RUN chmod +x /wait-for-it.sh
 
-# Apply database migrations
-RUN python manage.py migrate
+# prepare the entrypoint script
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
-# Create superuser
-RUN python manage.py create_superuser
-
-# Expose the port the app runs on
-EXPOSE 8000
-
-# Run the application
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "backend_cloud_dipl.wsgi:application"]
+# Added entrypoint to handle correct work of migrations
+ENTRYPOINT ["/entrypoint.sh"]

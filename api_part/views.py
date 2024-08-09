@@ -12,11 +12,15 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 class CreateAdminUserView(APIView):
     """
-    Create a new admin user
-    temporary decision for testing
+    Create a new admin user, temporary decision for testing
+    by default check password 123456
     """
 
     def post(self, request):
+        from backend_cloud_dipl.settings import ADMIN_CODE
+        admin_code = request.data.get('code', '')
+        if not admin_code or admin_code != ADMIN_CODE:
+            return Response({'error': 'correct code is required'}, status=status.HTTP_403_FORBIDDEN)
         try:
             serializer = AdminUserSerializer(data=request.data)
             if serializer.is_valid():
