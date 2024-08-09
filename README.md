@@ -61,6 +61,8 @@ To facilitate the project setup, a working Dockerfile, Docker Compose file, and 
 - Configure the .env file (an example is provided in .env-example). 
 - run docker-compose up -d
 
+THE project was tested by MacOS environment
+
 
 ## Creating the First Administrator
 
