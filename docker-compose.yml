@@ -38,3 +38,9 @@ services:
 volumes:
   postgres_data:
   static_volume:
+
+networks:
+  network1:
+    driver: overlay
+    driver_opts:
+      com.docker.network.driver.mtu: 1450
